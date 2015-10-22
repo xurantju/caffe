@@ -31,6 +31,29 @@ void caffe_cpu_gemm<double>(const CBLAS_TRANSPOSE TransA,
       ldb, beta, C, N);
 }
 
+template<>
+void caffe_cpu_gemm_masked<float>(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const float alpha, const float* A, const float* B, const float* mask, 
+    const float beta, float* C) {
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cblas_sgemm(CblasRowMajor, TransA, TransB, M, N, K, alpha, A, lda, B,
+      ldb, beta, C, N);
+}
+
+template<>
+void caffe_cpu_gemm_masked<double>(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const double alpha, const double* A, const double* B, const double* mask, 
+    const double beta, double* C) {
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cblas_dgemm(CblasRowMajor, TransA, TransB, M, N, K, alpha, A, lda, B,
+      ldb, beta, C, N);
+}
+
+
 template <>
 void caffe_cpu_gemv<float>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const float alpha, const float* A, const float* x,
@@ -64,9 +87,39 @@ void caffe_set(const int N, const Dtype alpha, Dtype* Y) {
   }
 }
 
+template void caffe_set<unsigned int>(const int N, const unsigned int alpha, unsigned int* Y);
 template void caffe_set<int>(const int N, const int alpha, int* Y);
 template void caffe_set<float>(const int N, const float alpha, float* Y);
 template void caffe_set<double>(const int N, const double alpha, double* Y);
+
+template<typename Dtype>
+Dtype caffe_mean(const int N, const Dtype* X) {
+  
+  Dtype sum = 0;
+  for (int i = 0; i < N; ++i) {
+    sum += X[i];
+  }
+  return sum / N;
+}
+
+template float caffe_mean<float>(const int N, const float *X);
+template int caffe_mean<int>(const int N, const int *X);
+
+template<typename Dtype>
+Dtype caffe_std(const int N, const Dtype mean, const Dtype* X) {
+
+  Dtype tmp = 0;
+  for (int i = 0; i < N; ++i) {
+    tmp += (X[i] -mean) * (X[i] - mean);
+  }
+  Dtype var = tmp / N;
+  return sqrt(var);
+}
+
+template float caffe_std<float>(const int N, const float mean, const float *X);
+template int caffe_std<int>(const int N, const int mean, const int *X);
+
+
 
 template <>
 void caffe_add_scalar(const int N, const float alpha, float* Y) {

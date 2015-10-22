@@ -374,6 +374,52 @@ class InnerProductLayer : public Layer<Dtype> {
 };
 
 /**
+ * @brief Do inner product for connections with a mask
+ * neurons with value smaller than alpha * std(weights) 
+ * is considered dead neurons and not involved in computation
+ */
+template <typename Dtype>
+class MaskedInnerProductLayer : public Layer<Dtype> {
+ public:
+  explicit MaskedInnerProductLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "MaskedInnerProduct"; }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  int M_;
+  int K_;
+  int N_;
+  bool bias_term_;
+  // magic number for thresholding the dead neurons
+  float alpha_;
+  Blob<Dtype> bias_multiplier_;
+  // mask of dead neurons
+  Blob<Dtype> mask_;
+  /// when divided by UINT_MAX, the randomly generated values @f$u\sim U(0,1)@f$
+  //Blob<unsigned int> mask_vec_;
+  /// the probability @f$ p @f$ of dropping any input
+  //Dtype threshold_;
+
+};
+
+
+/**
  * @brief Normalizes the input to have 0-mean and/or unit (1) variance.
  *
  * TODO(dox): thorough documentation for Forward, Backward, and proto params.

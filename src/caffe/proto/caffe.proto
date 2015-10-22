@@ -301,7 +301,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 139 (last added: tile_param)
+// LayerParameter next available layer-specific ID: 140 (last added: masked_inner_product_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -385,6 +385,7 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+  optional MaskedInnerProductParameter masked_inner_product_param = 139;
 }
 
 // Message that stores parameters used to apply transformation
@@ -705,6 +706,21 @@ message InnerProductParameter {
   optional int32 axis = 5 [default = 1];
 }
 
+message MaskedInnerProductParameter {
+  optional uint32 num_output = 1; // The number of outputs for the layer
+  optional bool bias_term = 2 [default = true]; // whether to have bias terms
+  optional FillerParameter weight_filler = 3; // The filler for the weight
+  optional FillerParameter bias_filler = 4; // The filler for the bias
+
+  // The first axis to be lumped into a single inner product computation;
+  // all preceding axes are retained in the output.
+  // May be negative to index from the end (e.g., -1 for the last axis).
+  optional int32 axis = 5 [default = 1];
+  // magic number for thresholding the dead neurons
+  optional float alpha = 6 [default = 0.1];
+
+}
+
 // Message that stores parameters used by LogLayer
 message LogParameter {
   // LogLayer computes outputs y = log_base(shift + scale * x), for base > 0.
@@ -957,6 +973,7 @@ message TileParameter {
   // The number of copies (tiles) of the blob to output.
   optional int32 tiles = 2;
 }
+
 
 // Message that stores parameters used by ThresholdLayer
 message ThresholdParameter {
